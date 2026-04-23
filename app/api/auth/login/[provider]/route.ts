@@ -62,7 +62,7 @@ export async function POST(
       });
       response_data.cookies.set("token", userToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false, //process.env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 60 * 60 * 24 * 7,
       });
