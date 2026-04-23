@@ -68,3 +68,7 @@ export const hashPassword = async (password: string): Promise<string> => {
 export const generateToken = async (_id: string): Promise<string> => {
   return jwt.sign({ _id }, SECRET, { expiresIn: "7d" });
 };
+
+export const verifyToken = (token: string): { _id: string } => {
+  return jwt.verify(token, SECRET) as { _id: string };
+};

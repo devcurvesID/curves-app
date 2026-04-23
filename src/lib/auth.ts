@@ -1,11 +1,8 @@
 import { cookies } from "next/headers";
 import { getUserById } from "../models/users/user_m";
-import { SECRET } from "../helpers";
+import { SECRET, verifyToken } from "../helpers";
 import jwt from "jsonwebtoken";
 
-export const verifyToken = (token: string): { _id: string } => {
-  return jwt.verify(token, SECRET) as { _id: string };
-};
 export const getCurrentUser = async (): Promise<any | null> => {
   try {
     const cookieStore = await cookies();
