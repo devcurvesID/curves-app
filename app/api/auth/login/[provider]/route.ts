@@ -60,19 +60,10 @@ export async function POST(
           token: userToken,
         },
       });
-      // response_data.cookies.set("token", userToken, {
-      //   httpOnly: true,
-      //   secure: process.env.NODE_ENV === "production",
-      //   sameSite: "lax",
-      //   maxAge: 60 * 60 * 24 * 7,
-      //   path: "/",
-      // });
       response_data.cookies.set("token", userToken, {
         httpOnly: true,
-        secure: false, //process.env.NODE_ENV === "production",
-        sameSite: "none", // kalau beda domain
-        path: "/",
-        domain: process.env.NEXT_PUBLIC_DOMAIN,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
         maxAge: 60 * 60 * 24 * 7,
       });
       return response_data;
