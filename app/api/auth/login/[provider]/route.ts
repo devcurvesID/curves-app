@@ -69,7 +69,7 @@ export async function POST(
       // });
       response_data.cookies.set("token", userToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false, //process.env.NODE_ENV === "production",
         sameSite: "none", // kalau beda domain
         path: "/",
         domain: process.env.NEXT_PUBLIC_DOMAIN,
