@@ -81,8 +81,9 @@ export const getUserBySourceId = (source_id: number) =>
 export const getUserByUsername = (username: string) =>
   UserModel.findOne({ username });
 
+// .lean() => mengembalikan object javascript biasa untuk menghemat memori
 export const getUserById = (_id: string) =>
-  UserModel.findById(_id).select("-password -remember_token -username");
+  UserModel.findById(_id).select("-password -remember_token -username").lean();
 
 export const getUserByEmailOrUsername = (value: string) =>
   UserModel.findOne({

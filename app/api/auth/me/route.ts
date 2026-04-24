@@ -1,13 +1,11 @@
-import { verifyPassword, generateToken } from "@/src/helpers";
 import { getCurrentUser } from "@/src/lib/auth";
 import connectDB from "@/src/lib/mongodb";
-import { getUserByUsername } from "@/src/models/users/user_m";
 import { NextRequest, NextResponse } from "next/server";
-
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
-    const cookieStore = await getCurrentUser();
+    // Login with web
+    const cookieStore = await getCurrentUser(req);
     if (!cookieStore) {
       return NextResponse.json(
         { error: "Yo're not authenticate" },

@@ -43,7 +43,7 @@ const UserPersonalSchema: Schema = new Schema<IUserPersonal>(
     },
     sex: {
       type: String,
-      required: true,
+      default: "F",
     },
     address: {
       type: String,
@@ -93,3 +93,6 @@ export const UserPersonal: Model<IUserPersonal> =
 
 export const insertUserPersonalByUserId = (data: IUserPersonal) =>
   UserPersonal.insertOne(data);
+
+export const getUserPersonalByUserId = (user_id: string) =>
+  UserPersonal.findOne({ user_id });

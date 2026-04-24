@@ -2,7 +2,9 @@ import { hashPassword, random_bytes } from "@/src/helpers";
 import connectDB from "@/src/lib/mongodb";
 import { getRoleBySourceId } from "@/src/models/roles/role_m";
 import { getUserByEmailOrUsername, UserModel } from "@/src/models/users/user_m";
+import { UserPersonal } from "@/src/models/users/user_personal";
 import { USER_ROLE_COACH, USER_ROLE_MEMBER } from "@/src/utils/constants";
+import { faker } from "@faker-js/faker";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
@@ -71,6 +73,29 @@ export async function POST(
     user_register.password = password_val;
     user_register.username = username_value;
     let insert_new = await UserModel.insertOne(user_register);
+    let phone_number = faker.number.int({ min: 100000000, max: 10000000000 });
+    let ponsel_format = String(`628${phone_number}`);
+    let user_personal = {
+      user_id: insert_new._id.toString(),
+      birth: faker.date.between({
+        from: "1800-01-01T00:00:00.000Z",
+        to: "2010-01-01T00:00:00.000Z",
+      }),
+      sex: "F",
+      address: faker.location.streetAddress({ useFullAddress: true }),
+      postal: faker.number.int({ min: 10000, max: 90000 }),
+      phone: Number(ponsel_format),
+      cellphone: Number(ponsel_format),
+      nik: faker.number.int({ min: 1000000000000000 }),
+      photo: faker.image.avatar(),
+      joined: faker.date.between({
+        from: "2005-01-01T00:00:00.000Z",
+        to: Date.now(),
+      }),
+      tshirt_size: 2,
+      flag: "A",
+    };
+    await UserPersonal.insertOne(user_personal);
     return NextResponse.json({ response: insert_new }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 404 });

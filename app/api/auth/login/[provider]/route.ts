@@ -62,7 +62,7 @@ export async function POST(
       });
       response_data.cookies.set("token", userToken, {
         httpOnly: true,
-        secure: false, //process.env.NODE_ENV === "production",
+        secure: false, //process.env.NODE_ENV === "production", => ubah ketika sudah memiliki domain
         sameSite: "lax",
         maxAge: 60 * 60 * 24 * 7,
       });
