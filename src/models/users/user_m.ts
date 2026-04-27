@@ -89,3 +89,6 @@ export const getUserByEmailOrUsername = (value: string) =>
   UserModel.findOne({
     $or: [{ username: value }, { email: value }],
   });
+
+export const updateUserById = (_id: string, data: any) =>
+  UserModel.updateOne({ _id }, { $set: data });

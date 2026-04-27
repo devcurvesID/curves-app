@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
 import { getUserPersonalByUserId } from "../models/users/user_personal";
 
-export const getCurrentUser = async (req: NextRequest): Promise<any | null> => {
+export const getUserLogin = async (req: NextRequest): Promise<any | null> => {
   try {
     const osHeader = req.headers.get("x-platform-os");
     if (osHeader === "android" || osHeader === "ios") {
@@ -15,28 +15,25 @@ export const getCurrentUser = async (req: NextRequest): Promise<any | null> => {
         headerToken = authHeader.split(" ")[1];
       }
       if (!headerToken) {
-        return null;
+        throw Error("pengguna tidak ditemukan");
       }
       const decode = verifyToken(headerToken);
-      let cek_user = await getUserById(decode._id);
-      if (!cek_user) {
-        return null;
-      }
-      let cek_userpersonal = await getUserPersonalByUserId(
-        decode._id.toString(),
-      );
-      let body_response = {
-        ...cek_user,
-        user_personal: cek_userpersonal,
-      };
-      return body_response;
+      return decode;
     }
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
     if (!token) {
-      return null;
+      throw Error("pengguna tidak ditemukan");
     }
     const decode = verifyToken(token);
+    return decode;
+  } catch (error) {
+    throw error;
+  }
+};
+export const getCurrentUser = async (req: NextRequest): Promise<any | null> => {
+  try {
+    const decode = await getUserLogin(req);
     let cek_user = await getUserById(decode._id);
     if (!cek_user) {
       return null;
@@ -48,6 +45,6 @@ export const getCurrentUser = async (req: NextRequest): Promise<any | null> => {
     };
     return body_response;
   } catch (error) {
-    return null;
+    throw error;
   }
 };

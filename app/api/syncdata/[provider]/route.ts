@@ -1,3 +1,4 @@
+import { getDataWeighMeasureByUserId } from "@/src/controllers/weighmeasures";
 import { formatToISO, toUTCISOString } from "@/src/helpers";
 import { api } from "@/src/lib/axios";
 import connectDB from "@/src/lib/mongodb";
@@ -17,8 +18,14 @@ export async function GET(
   context: { params: Promise<{ provider: string }> },
 ) {
   const { provider } = await context.params;
+  const { searchParams } = new URL(req.url);
+  const offset = searchParams.get("offset");
+  const limit = searchParams.get("limit");
+  const phone = searchParams.get("phone");
 
-  if (!["user", "role", "club", "user-member"].includes(provider)) {
+  if (
+    !["user", "role", "club", "user-member", "weigh-measure"].includes(provider)
+  ) {
     return NextResponse.json(
       {
         error: "provide not support",
@@ -28,6 +35,10 @@ export async function GET(
   }
   try {
     await connectDB();
+    if (provider === "weigh-measure") {
+      let response_data = await getDataWeighMeasureByUserId(req);
+      return NextResponse.json({ response: response_data }, { status: 200 });
+    }
     if (provider === "club") {
       const {
         data: { response },
@@ -78,9 +89,43 @@ export async function GET(
     }
 
     if (provider === "user-member") {
+      if (phone) {
+        const {
+          data: { response },
+        } = await api.get(`/user-member?phone=${phone}`);
+        if (!response) {
+          return NextResponse.json(
+            {
+              error: "pengguna tidak ditemukan",
+            },
+            { status: 404 },
+          );
+        }
+        let curr_data = await getUserBySourceId(response.id);
+        if (!curr_data) {
+          let role_data = await getRoleBySourceId(response.role_id);
+          let club_data = await getClubBySourceId(response.club_id);
+          let req_body = {
+            ...response,
+            source_id: response.id,
+            created_at: toUTCISOString(response.created_at),
+            updated_at: toUTCISOString(response.updated_at),
+            role_id: role_data?._id,
+            club_id: club_data?._id,
+          };
+          let new_user = await insertNewUser(req_body);
+          await insertUserPersonalByUserId({
+            ...req_body,
+            user_id: new_user._id,
+          });
+        }
+        return NextResponse.json({ response: response }, { status: 200 });
+      }
+      let limit_val = limit ? limit : 10;
+      let offset_val = offset ? offset : 0;
       const {
         data: { response },
-      } = await api.get("/user-member?offset=400&limit=10");
+      } = await api.get(`/user-member?offset=${offset_val}&limit=${limit_val}`);
       let response_member = response;
       let data_member = [];
       for (let i = 0; i < response_member.length; i++) {

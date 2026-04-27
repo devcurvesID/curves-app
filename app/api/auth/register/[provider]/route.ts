@@ -89,7 +89,7 @@ export async function POST(
       nik: faker.number.int({ min: 1000000000000000 }),
       photo: faker.image.avatar(),
       joined: faker.date.between({
-        from: "2005-01-01T00:00:00.000Z",
+        from: "1992-01-01T00:00:00.000Z",
         to: Date.now(),
       }),
       tshirt_size: 2,

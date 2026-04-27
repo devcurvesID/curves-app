@@ -13,10 +13,8 @@ export async function GET(req: NextRequest) {
       );
     }
     return NextResponse.json(cookieStore, { status: 200 });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Internal Server Errors" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    let error_response = error.message ? error.message : "Server Error";
+    return NextResponse.json({ error: error_response }, { status: 500 });
   }
 }
