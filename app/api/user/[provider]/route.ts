@@ -1,4 +1,5 @@
 import { insertNewUserToMongodb } from "@/src/controllers/users";
+import { hashPassword } from "@/src/helpers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
@@ -28,7 +29,37 @@ export async function POST(
     }
     // API will be using when member's the first time registration account
     if (provider === "verification") {
-      let insert_user = await insertNewUserToMongodb(body);
+      const { password, verify_password, username } = body;
+      if (!username) {
+        return NextResponse.json(
+          { error: "username tidak boleh kosong" },
+          { status: 404 },
+        );
+      }
+      if (!password) {
+        return NextResponse.json(
+          { error: "password tidak boleh kosong" },
+          { status: 404 },
+        );
+      }
+      if (!verify_password) {
+        return NextResponse.json(
+          { error: "verify_password tidak boleh kosong" },
+          { status: 404 },
+        );
+      }
+      if (verify_password != password) {
+        return NextResponse.json(
+          { error: "verifikasi password tidak sesuai" },
+          { status: 404 },
+        );
+      }
+      const password_val = await hashPassword(password);
+      let body_req = {
+        ...body,
+        password: password_val,
+      };
+      let insert_user = await insertNewUserToMongodb(body_req);
       return NextResponse.json({ response: insert_user }, { status: 200 });
     }
   } catch (error: any) {
