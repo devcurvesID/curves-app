@@ -1,6 +1,8 @@
-import { verifyPassword, generateToken } from "@/src/helpers";
+import { generateUserToken } from "@/src/controllers/users";
+import { verifyPassword } from "@/src/helpers";
 import connectDB from "@/src/lib/mongodb";
-import { getUserByUsername } from "@/src/models/users/user_m";
+import { getUserById, getUserByUsername } from "@/src/models/users/user_m";
+import { getUserPersonalByPhone } from "@/src/models/users/user_personal";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
@@ -8,7 +10,7 @@ export async function POST(
   context: { params: Promise<{ provider: string }> },
 ) {
   const { provider } = await context.params;
-  if (!["member", "coach"].includes(provider)) {
+  if (!["member", "coach", "phone"].includes(provider)) {
     return NextResponse.json(
       { error: "provider not support" },
       { status: 400 },
@@ -17,7 +19,25 @@ export async function POST(
   try {
     await connectDB();
     const body = await req.json();
-    const { username, password } = body;
+    const { username, password, phone } = body;
+    if (provider === "phone") {
+      if (!phone) {
+        return NextResponse.json(
+          { error: "nomor ponsel tidak boleh kosong" },
+          { status: 404 },
+        );
+      }
+      let cek_user_phone = await getUserPersonalByPhone(Number(phone));
+      if (!cek_user_phone) {
+        return NextResponse.json(
+          { error: "nomor ponsel belum terdaftar" },
+          { status: 404 },
+        );
+      }
+      let user_login = await getUserById(cek_user_phone.user_id.toString());
+      const response_data = await generateUserToken(user_login);
+      return response_data;
+    }
     if (!username) {
       return NextResponse.json(
         { error: "username tidak boleh kosong" },
@@ -32,8 +52,6 @@ export async function POST(
     }
     if (provider === "member") {
       const data_user = await getUserByUsername(username);
-      console.log("data_user", data_user);
-
       if (!data_user) {
         return NextResponse.json(
           { error: "Data user tidak ditemukan" },
@@ -50,22 +68,7 @@ export async function POST(
           { status: 404 },
         );
       }
-      const user_id = data_user._id.toString();
-      let userToken = await generateToken(user_id);
-      const response_data = NextResponse.json({
-        response: {
-          _id: data_user._id,
-          source_id: data_user.source_id,
-          name: data_user.name,
-          token: userToken,
-        },
-      });
-      response_data.cookies.set("token", userToken, {
-        httpOnly: true,
-        secure: false, //process.env.NODE_ENV === "production", => ubah ketika sudah memiliki domain
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7,
-      });
+      const response_data = await generateUserToken(data_user);
       return response_data;
     }
     if (provider === "coach") {

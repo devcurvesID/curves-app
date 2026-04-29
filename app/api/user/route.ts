@@ -3,12 +3,16 @@ import { getCurrentUser, getUserLogin } from "@/src/lib/auth";
 import { api } from "@/src/lib/axios";
 import connectDB from "@/src/lib/mongodb";
 import {
+  getUserById,
   getUserBySourceId,
   insertNewUser,
   updateUserById,
   UserModel,
 } from "@/src/models/users/user_m";
-import { insertUserPersonalByUserId } from "@/src/models/users/user_personal";
+import {
+  getUserPersonalByPhone,
+  insertUserPersonalByUserId,
+} from "@/src/models/users/user_personal";
 import dayjs from "dayjs";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -19,6 +23,12 @@ export async function GET(req: NextRequest) {
   try {
     await connectDB();
     if (phone) {
+      // check _id user when user have fetching
+      let cek_phone = await getUserPersonalByPhone(Number(phone));
+      if (cek_phone) {
+        let user_login = await getUserById(cek_phone.user_id.toString());
+        return NextResponse.json({ response: user_login }, { status: 200 });
+      }
       const {
         data: { response },
       } = await api.get(`/user-member?phone=${phone}`);

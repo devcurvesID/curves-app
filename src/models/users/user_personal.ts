@@ -96,3 +96,6 @@ export const insertUserPersonalByUserId = (data: IUserPersonal) =>
 
 export const getUserPersonalByUserId = (user_id: string) =>
   UserPersonal.findOne({ user_id });
+
+export const getUserPersonalByPhone = (phone: number) =>
+  UserPersonal.findOne({ phone });

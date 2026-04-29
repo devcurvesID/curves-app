@@ -1,7 +1,6 @@
-import { insertNewUserToMongodb } from "@/src/controllers/users";
 import { getDataWeighMeasureByUserId } from "@/src/controllers/weighmeasures";
-import { getDataWorkOutByUserId } from "@/src/controllers/workouts";
 import { formatToISO, toUTCISOString } from "@/src/helpers";
+import { getUserLogin } from "@/src/lib/auth";
 import { api } from "@/src/lib/axios";
 import connectDB from "@/src/lib/mongodb";
 import { ClubModel, getClubBySourceId } from "@/src/models/clubs/club_m";
@@ -24,15 +23,9 @@ export async function GET(
   const offset = searchParams.get("offset");
   const limit = searchParams.get("limit");
   const phone = searchParams.get("phone");
+
   if (
-    ![
-      "user",
-      "role",
-      "club",
-      "user-member",
-      "weigh-measure",
-      "workout",
-    ].includes(provider)
+    !["user", "role", "club", "user-member", "weigh-measure"].includes(provider)
   ) {
     return NextResponse.json(
       {
@@ -43,10 +36,8 @@ export async function GET(
   }
   try {
     await connectDB();
-    if (provider === "workout") {
-      let response_data = await getDataWorkOutByUserId(req);
-      return NextResponse.json({ response: response_data }, { status: 200 });
-    }
+    const decode = await getUserLogin(req);
+
     if (provider === "weigh-measure") {
       let response_data = await getDataWeighMeasureByUserId(req);
       return NextResponse.json({ response: response_data }, { status: 200 });
@@ -113,8 +104,25 @@ export async function GET(
             { status: 404 },
           );
         }
-        let insert_user = await insertNewUserToMongodb(response);
-        return NextResponse.json({ response: insert_user }, { status: 200 });
+        let curr_data = await getUserBySourceId(response.id);
+        if (!curr_data) {
+          let role_data = await getRoleBySourceId(response.role_id);
+          let club_data = await getClubBySourceId(response.club_id);
+          let req_body = {
+            ...response,
+            source_id: response.id,
+            created_at: toUTCISOString(response.created_at),
+            updated_at: toUTCISOString(response.updated_at),
+            role_id: role_data?._id,
+            club_id: club_data?._id,
+          };
+          let new_user = await insertNewUser(req_body);
+          await insertUserPersonalByUserId({
+            ...req_body,
+            user_id: new_user._id,
+          });
+        }
+        return NextResponse.json({ response: response }, { status: 200 });
       }
       let limit_val = limit ? limit : 10;
       let offset_val = offset ? offset : 0;
@@ -122,13 +130,34 @@ export async function GET(
         data: { response },
       } = await api.get(`/user-member?offset=${offset_val}&limit=${limit_val}`);
       let response_member = response;
-      if (response_member.length === 0) {
-        return NextResponse.json({ response: [] }, { status: 200 });
-      }
       let data_member = [];
       for (let i = 0; i < response_member.length; i++) {
-        let insert_user = await insertNewUserToMongodb(response_member[i]);
-        data_member.push(insert_user);
+        let curr_data = await getUserBySourceId(response_member[i].id);
+        if (!curr_data) {
+          let role_data = await getRoleBySourceId(response_member[i].role_id);
+          let club_data = await getClubBySourceId(response_member[i].club_id);
+          data_member.push({
+            ...response_member[i],
+            source_id: response_member[i].id,
+            created_at: toUTCISOString(response_member[i].created_at),
+            updated_at: toUTCISOString(response_member[i].updated_at),
+            role_id: role_data?._id,
+            club_id: club_data?._id,
+          });
+        }
+      }
+      if (data_member.length == 0) {
+        return NextResponse.json(
+          { response: response_member },
+          { status: 200 },
+        );
+      }
+      for (let i = 0; i < data_member.length; i++) {
+        let new_user = await insertNewUser(data_member[i]);
+        await insertUserPersonalByUserId({
+          ...data_member[i],
+          user_id: new_user._id,
+        });
       }
       return NextResponse.json({ response: data_member }, { status: 200 });
     }
