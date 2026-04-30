@@ -35,3 +35,5 @@ export const RoleModel: Model<IRole> =
   mongoose.model<IRole>(MODEL_NAME, RoleSchema, MODEL_NAME);
 export const getRoleBySourceId = (source_id: number) =>
   RoleModel.findOne({ source_id });
+
+export const getRoleById = (_id: string) => RoleModel.findOne({ _id });

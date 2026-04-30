@@ -95,3 +95,10 @@ export const updateUserById = (_id: string, data: any) =>
 
 export const getUserByIdAndClubId = (_id: string, club_id: string) =>
   UserModel.findOne({ _id, club_id }).lean();
+
+export const findUserModel = (data: any, skip: number, limit: number) =>
+  UserModel.find(data)
+    .select("-password -remember_token -username")
+    .skip(skip)
+    .limit(limit)
+    .lean();

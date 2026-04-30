@@ -1,7 +1,11 @@
-import { getUserBySourceId, insertNewUser } from "../models/users/user_m";
+import {
+  findUserModel,
+  getUserBySourceId,
+  insertNewUser,
+  UserModel,
+} from "../models/users/user_m";
 import { generateToken, toUTCISOString } from "../helpers";
 import { NextRequest, NextResponse } from "next/server";
-import { api } from "../lib/axios";
 import { getClubBySourceId } from "../models/clubs/club_m";
 import { getRoleBySourceId } from "../models/roles/role_m";
 import { insertUserPersonalByUserId } from "../models/users/user_personal";
@@ -53,4 +57,52 @@ export const generateUserToken = async (user: any): Promise<any | null> => {
     maxAge: 60 * 60 * 24 * 7,
   });
   return response_data;
+};
+
+export const getDataUserByRole = async (
+  req: NextRequest,
+  role_source_id: number,
+): Promise<any | null> => {
+  try {
+    const { searchParams } = new URL(req.url);
+    const offset = searchParams.get("offset");
+    const limit = searchParams.get("limit");
+    const user_id = searchParams.get("_id");
+    const club_id = searchParams.get("club_id");
+
+    let limit_val = limit ? Number(limit) : 10;
+    let skip_val = offset ? Number(offset) : 0;
+
+    const role = await getRoleBySourceId(role_source_id);
+    if (!role) {
+      throw new Error("Role tidak ditemukan");
+    }
+    let req_body: any = {
+      role_id: role._id,
+    };
+    if (user_id) {
+      req_body._id = user_id;
+      const data_member = await findUserModel(req_body, skip_val, limit_val);
+      if (data_member.length === 0) {
+        throw new Error("Member tidak ditemukan");
+      }
+      return data_member[0];
+    }
+    if (club_id) {
+      req_body.club_id = club_id;
+    }
+    const total = await UserModel.countDocuments(req_body);
+    // $in => find muntiple ids with data type is array
+    const data_member = await findUserModel(req_body, skip_val, limit_val);
+
+    const data_response = {
+      total,
+      limit: limit_val,
+      offset: skip_val,
+      response: data_member,
+    };
+    return data_response;
+  } catch (error) {
+    throw error;
+  }
 };
