@@ -1,18 +1,14 @@
 import { insertNewUserToMongodb } from "@/src/controllers/users";
-import { getDataWeighMeasureByUserId } from "@/src/controllers/weighmeasures";
+import {
+  getDataWeighMeasureByUserId,
+  insertNewWorkOutToMongodb,
+} from "@/src/controllers/weighmeasures";
 import { getDataWorkOutByUserId } from "@/src/controllers/workouts";
 import { formatToISO, toUTCISOString } from "@/src/helpers";
 import { api } from "@/src/lib/axios";
 import connectDB from "@/src/lib/mongodb";
 import { ClubModel, getClubBySourceId } from "@/src/models/clubs/club_m";
 import { getRoleBySourceId, RoleModel } from "@/src/models/roles/role_m";
-import {
-  getUserBySourceId,
-  insertNewUser,
-  UserModel,
-} from "@/src/models/users/user_m";
-import { insertUserPersonalByUserId } from "@/src/models/users/user_personal";
-import dayjs from "dayjs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -32,6 +28,7 @@ export async function GET(
       "user-member",
       "weigh-measure",
       "workout",
+      "attendance",
     ].includes(provider)
   ) {
     return NextResponse.json(
@@ -43,6 +40,9 @@ export async function GET(
   }
   try {
     await connectDB();
+    if (provider === "attendance") {
+      // sync attendance to mobile
+    }
     if (provider === "workout") {
       let response_data = await getDataWorkOutByUserId(req);
       return NextResponse.json({ response: response_data }, { status: 200 });
@@ -131,6 +131,42 @@ export async function GET(
         data_member.push(insert_user);
       }
       return NextResponse.json({ response: data_member }, { status: 200 });
+    }
+    return NextResponse.json({ response: [] }, { status: 200 });
+  } catch (error: any) {
+    let error_response = error.message ? error.message : "Server Error";
+    return NextResponse.json({ error: error_response }, { status: 404 });
+  }
+}
+
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ provider: string }> },
+) {
+  const { provider } = await context.params;
+  if (
+    ![
+      "user",
+      "role",
+      "club",
+      "user-member",
+      "weigh-measure",
+      "workout",
+      "attendance",
+    ].includes(provider)
+  ) {
+    return NextResponse.json(
+      {
+        error: "provide not support",
+      },
+      { status: 404 },
+    );
+  }
+  try {
+    await connectDB();
+    if (provider === "attendance") {
+      const data_attendance = await insertNewWorkOutToMongodb(req);
+      return NextResponse.json({ response: data_attendance }, { status: 200 });
     }
     return NextResponse.json({ response: [] }, { status: 200 });
   } catch (error: any) {

@@ -1,15 +1,22 @@
-import { cookies } from "next/headers";
-import { getUserById, getUserBySourceId } from "../models/users/user_m";
-import { SECRET, toUTCISOString, verifyToken } from "../helpers";
-import jwt from "jsonwebtoken";
+import {
+  getUserById,
+  getUserByIdAndClubId,
+  getUserBySourceId,
+  updateUserById,
+} from "../models/users/user_m";
+import { toUTCISOString } from "../helpers";
 import { NextRequest } from "next/server";
-import { getUserPersonalByUserId } from "../models/users/user_personal";
 import { api } from "../lib/axios";
 import {
   getWeighMeasureBySourceId,
-  insertWeighMeasureByUserId,
   WeighMeasure,
 } from "../models/weighmeasures/weigh_measure";
+import { getClubBySourceId } from "../models/clubs/club_m";
+import {
+  getWorkOutByUserIdAndWorkOutDate,
+  WorkOut,
+} from "../models/workouts/workout_m";
+import { getUserLogin } from "../lib/auth";
 
 export const getDataWeighMeasureByUserId = async (
   req: NextRequest,
@@ -49,6 +56,93 @@ export const getDataWeighMeasureByUserId = async (
     }
     let inser_data = await WeighMeasure.insertMany(data_mongo);
     return inser_data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const insertNewWorkOutToMongodb = async (
+  req: NextRequest,
+): Promise<any | null> => {
+  try {
+    const body = await req.json();
+    const { id, user_id, club_id, workout_date } = body;
+    let data_user = await getUserBySourceId(user_id);
+    if (!data_user) {
+      return null;
+    }
+    let data_club = await getClubBySourceId(club_id);
+    if (!data_club) {
+      return null;
+    }
+    let current_date = new Date();
+    let workout_today = await getWorkOutByUserIdAndWorkOutDate(
+      data_user._id.toString(),
+      current_date,
+    );
+    if (workout_today) {
+      return workout_today;
+    }
+    let req_body = {
+      source_id: id,
+      user_id: data_user._id,
+      club_id: data_club._id,
+      workout_date: toUTCISOString(workout_date),
+    };
+    let insert_user = await WorkOut.insertOne(req_body);
+
+    // sync attendance to mobile
+    let workout_club = await getUserByIdAndClubId(
+      data_user._id.toString(),
+      data_club._id.toString(),
+    );
+    if (!workout_club) {
+      await updateUserById(data_user._id.toString(), {
+        club_id: data_club._id.toString(),
+      });
+    }
+    return insert_user;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const insertNewWorkOutWithUserLoginToMongodb = async (
+  req: NextRequest,
+): Promise<any | null> => {
+  try {
+    const decode = await getUserLogin(req);
+    const body = await req.json();
+    const { club_id, workout_source_id } = body;
+    let cek_user = await getUserById(decode._id);
+    if (!cek_user) {
+      throw Error("pengguna tidak ditemukan");
+    }
+    let current_date = new Date();
+    let workout_today = await getWorkOutByUserIdAndWorkOutDate(
+      decode._id.toString(),
+      current_date,
+    );
+    if (workout_today) {
+      return workout_today;
+    }
+    // improve create data from cms than push to mongodb
+    let req_body = {
+      source_id: workout_source_id,
+      user_id: decode._id,
+      club_id,
+      workout_date: current_date,
+    };
+    let insert_user = await WorkOut.insertOne(req_body);
+    // check when club's is empty at user collection
+    let workout_club = await getUserByIdAndClubId(
+      decode._id.toString(),
+      club_id,
+    );
+    if (!workout_club) {
+      await updateUserById(decode._id.toString(), { club_id });
+    }
+    return insert_user;
   } catch (error) {
     throw error;
   }

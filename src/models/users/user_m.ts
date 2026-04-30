@@ -92,3 +92,6 @@ export const getUserByEmailOrUsername = (value: string) =>
 
 export const updateUserById = (_id: string, data: any) =>
   UserModel.updateOne({ _id }, { $set: data });
+
+export const getUserByIdAndClubId = (_id: string, club_id: string) =>
+  UserModel.findOne({ _id, club_id }).lean();

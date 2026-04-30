@@ -144,3 +144,5 @@ export const ClubModel: Model<IClub> =
   mongoose.model<IClub>(MODEL_NAME, ClubSchema, MODEL_NAME);
 export const getClubBySourceId = (source_id: number) =>
   ClubModel.findOne({ source_id });
+
+export const getClubById = (_id: string) => ClubModel.findOne({ _id });

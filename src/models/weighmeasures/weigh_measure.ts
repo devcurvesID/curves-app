@@ -106,8 +106,16 @@ export const WeighMeasure: Model<IWeighMeasure> =
 export const insertWeighMeasureByUserId = (data: IWeighMeasure) =>
   WeighMeasure.insertOne(data);
 
-export const getWeighMeasureByUserId = (user_id: string) =>
-  WeighMeasure.findOne({ user_id });
+export const getWeighMeasureByUserId = (
+  user_id: string,
+  skip: number,
+  limit: number,
+) =>
+  WeighMeasure.find({ user_id })
+    .select("-user_id")
+    .skip(skip)
+    .limit(limit)
+    .lean();
 
 export const getWeighMeasureBySourceId = (source_id: number) =>
   WeighMeasure.findOne({ source_id });
