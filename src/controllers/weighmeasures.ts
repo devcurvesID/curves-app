@@ -175,7 +175,7 @@ export const getDataWeighMeasureByUserIdPerMonth = async (
     }
     let start_date = new Date(Number(year), Number(month), 1);
     let end_date = new Date(Number(year), Number(month) + 1, 1);
-    body.workout_date = {
+    body.wm_date = {
       $gte: start_date,
       $lt: end_date,
     };
