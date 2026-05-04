@@ -9,6 +9,7 @@ import { NextRequest } from "next/server";
 import { api } from "../lib/axios";
 import {
   getWeighMeasureBySourceId,
+  getWeighMeasureUser,
   WeighMeasure,
 } from "../models/weighmeasures/weigh_measure";
 import { getClubBySourceId } from "../models/clubs/club_m";
@@ -143,6 +144,50 @@ export const insertNewWorkOutWithUserLoginToMongodb = async (
       await updateUserById(decode._id.toString(), { club_id });
     }
     return insert_user;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getDataWeighMeasureByUserIdPerMonth = async (
+  req: NextRequest,
+): Promise<any | null> => {
+  try {
+    const { searchParams } = new URL(req.url);
+    const decode = await getUserLogin(req);
+    let cek_user = await getUserById(decode._id);
+    if (!cek_user) {
+      throw Error("pengguna tidak ditemukan");
+    }
+    let body: any = {
+      user_id: decode._id.toString(),
+    };
+    const total = await WeighMeasure.countDocuments(body);
+    let year = searchParams.get("year");
+    let month = searchParams.get("month");
+    if (!year) {
+      let curr_year = new Date().getFullYear();
+      year = curr_year.toString();
+    }
+    if (!month) {
+      let curr_month = new Date().getMonth() + 1;
+      month = curr_month.toString();
+    }
+    let start_date = new Date(Number(year), Number(month), 1);
+    let end_date = new Date(Number(year), Number(month) + 1, 1);
+    body.workout_date = {
+      $gte: start_date,
+      $lt: end_date,
+    };
+    const total_wm_per_month = await WeighMeasure.countDocuments(body);
+    const data_workout = await getWeighMeasureUser(body, 0, total_wm_per_month);
+    const response_data = {
+      total_wm_per_month,
+      total,
+      response: data_workout,
+      ...body,
+    };
+    return response_data;
   } catch (error) {
     throw error;
   }

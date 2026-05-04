@@ -1,9 +1,14 @@
-import { getUserBySourceId } from "../models/users/user_m";
+import { getUserById, getUserBySourceId } from "../models/users/user_m";
 import { toUTCISOString } from "../helpers";
 import { NextRequest } from "next/server";
 import { api } from "../lib/axios";
-import { getWorkOutBySourceId, WorkOut } from "../models/workouts/workout_m";
+import {
+  getWorkOutBySourceId,
+  getWorkOutUser,
+  WorkOut,
+} from "../models/workouts/workout_m";
 import { getClubBySourceId } from "../models/clubs/club_m";
+import { getUserLogin } from "../lib/auth";
 
 export const getDataWorkOutByUserId = async (
   req: NextRequest,
@@ -46,6 +51,55 @@ export const getDataWorkOutByUserId = async (
     }
     let insert_data = await WorkOut.insertMany(data_mongo);
     return insert_data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getDataWorkOutByUserIdPerMonth = async (
+  req: NextRequest,
+): Promise<any | null> => {
+  try {
+    const { searchParams } = new URL(req.url);
+    const decode = await getUserLogin(req);
+    let cek_user = await getUserById(decode._id);
+    if (!cek_user) {
+      throw Error("pengguna tidak ditemukan");
+    }
+    let body: any = {
+      user_id: decode._id.toString(),
+      club_id: { $in: cek_user.club_id },
+    };
+    const total = await WorkOut.countDocuments(body);
+    const club_id = searchParams.get("club_id");
+    if (club_id) {
+      body.club_id = club_id;
+    }
+    let year = searchParams.get("year");
+    let month = searchParams.get("month");
+    if (!year) {
+      let curr_year = new Date().getFullYear();
+      year = curr_year.toString();
+    }
+    if (!month) {
+      let curr_month = new Date().getMonth() + 1;
+      month = curr_month.toString();
+    }
+    let start_date = new Date(Number(year), Number(month), 1);
+    let end_date = new Date(Number(year), Number(month) + 1, 1);
+    body.workout_date = {
+      $gte: start_date,
+      $lt: end_date,
+    };
+    const total_workout_per_month = await WorkOut.countDocuments(body);
+    const data_workout = await getWorkOutUser(body, 0, total_workout_per_month);
+    const response_data = {
+      total_workout_per_month,
+      total,
+      response: data_workout,
+      ...body,
+    };
+    return response_data;
   } catch (error) {
     throw error;
   }

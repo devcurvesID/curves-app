@@ -1,5 +1,9 @@
 import { insertNewUserToMongodb } from "@/src/controllers/users";
-import { insertNewWorkOutWithUserLoginToMongodb } from "@/src/controllers/weighmeasures";
+import {
+  getDataWeighMeasureByUserIdPerMonth,
+  insertNewWorkOutWithUserLoginToMongodb,
+} from "@/src/controllers/weighmeasures";
+import { getDataWorkOutByUserIdPerMonth } from "@/src/controllers/workouts";
 import { hashPassword, toUTCISOString } from "@/src/helpers";
 import { getUserLogin } from "@/src/lib/auth";
 import connectDB from "@/src/lib/mongodb";
@@ -9,15 +13,6 @@ import {
   getUserByIdAndClubId,
   updateUserById,
 } from "@/src/models/users/user_m";
-import {
-  getWeighMeasureByUserId,
-  WeighMeasure,
-} from "@/src/models/weighmeasures/weigh_measure";
-import {
-  getWorkOutByUserIdAndWorkOutDate,
-  getWorkOutUser,
-  WorkOut,
-} from "@/src/models/workouts/workout_m";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
@@ -111,13 +106,16 @@ export async function GET(
       { status: 400 },
     );
   }
-  const { searchParams } = new URL(req.url);
-  const offset = searchParams.get("offset");
-  const limit = searchParams.get("limit");
-  let limit_val = limit ? Number(limit) : 10;
-  let skip_val = offset ? Number(offset) : 0;
   try {
     await connectDB();
+    if (provider === "workout") {
+      const data_work_out = await getDataWorkOutByUserIdPerMonth(req);
+      return NextResponse.json(data_work_out);
+    }
+    if (provider === "weigh-measure") {
+      const data_weigh_measure = await getDataWeighMeasureByUserIdPerMonth(req);
+      return NextResponse.json(data_weigh_measure);
+    }
     const decode = await getUserLogin(req);
     if (provider === "club") {
       let cek_user = await getUserById(decode._id);
@@ -134,38 +132,6 @@ export async function GET(
       });
     }
 
-    if (provider === "workout") {
-      let cek_user = await getUserById(decode._id);
-      if (!cek_user) {
-        throw Error("pengguna tidak ditemukan");
-      }
-      let body: any = {
-        user_id: decode._id.toString(),
-        club_id: { $in: cek_user.club_id },
-      };
-      const total = await WorkOut.countDocuments(body);
-      const data_workout = await getWorkOutUser(body, skip_val, limit_val);
-      return NextResponse.json({
-        total,
-        response: data_workout,
-        ...body,
-      });
-    }
-    if (provider === "weigh-measure") {
-      const total = await WeighMeasure.countDocuments({
-        user_id: decode._id.toString(),
-      });
-      const data_workout = await getWeighMeasureByUserId(
-        decode._id.toString(),
-        skip_val,
-        limit_val,
-      );
-      return NextResponse.json({
-        total,
-        user_id: decode._id,
-        response: data_workout,
-      });
-    }
     //
   } catch (error: any) {
     let error_response = error.message ? error.message : "Server Error";

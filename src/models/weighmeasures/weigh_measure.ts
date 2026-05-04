@@ -119,3 +119,6 @@ export const getWeighMeasureByUserId = (
 
 export const getWeighMeasureBySourceId = (source_id: number) =>
   WeighMeasure.findOne({ source_id });
+
+export const getWeighMeasureUser = (data: any, skip: number, limit: number) =>
+  WeighMeasure.find(data).select("-user_id").skip(skip).limit(limit).lean();
