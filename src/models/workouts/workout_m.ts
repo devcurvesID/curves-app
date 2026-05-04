@@ -54,7 +54,12 @@ export const getWorkOutBySourceId = (source_id: number) =>
   WorkOut.findOne({ source_id });
 
 export const getWorkOutUser = (data: any, skip: number, limit: number) =>
-  WorkOut.find(data).select("-user_id").skip(skip).limit(limit).lean();
+  WorkOut.find(data)
+    .select("-user_id")
+    .skip(skip)
+    .limit(limit)
+    .sort({ workout_date: 1 })
+    .lean();
 
 export const getWorkOutByUserIdAndWorkOutDate = (
   user_id: string,
