@@ -125,5 +125,5 @@ export const getWeighMeasureUser = (data: any, skip: number, limit: number) =>
     .select("-user_id")
     .skip(skip)
     .limit(limit)
-    .sort({ wm_date: 1 })
+    .sort({ wm_date: -1 })
     .lean();

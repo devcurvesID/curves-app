@@ -1,5 +1,6 @@
 import { insertNewUserToMongodb } from "@/src/controllers/users";
 import {
+  getDataLastWeighMeasureByUserId,
   getDataWeighMeasureByUserIdPerMonth,
   insertNewWorkOutWithUserLoginToMongodb,
 } from "@/src/controllers/weighmeasures";
@@ -100,7 +101,11 @@ export async function GET(
   context: { params: Promise<{ provider: string }> },
 ) {
   const { provider } = await context.params;
-  if (!["weigh-measure", "workout", "club"].includes(provider)) {
+  if (
+    !["last-weigh-measure", "weigh-measure", "workout", "club"].includes(
+      provider,
+    )
+  ) {
     return NextResponse.json(
       { error: "provider not support" },
       { status: 400 },
@@ -108,6 +113,10 @@ export async function GET(
   }
   try {
     await connectDB();
+    if (provider === "last-weigh-measure") {
+      const data_las_wm = await getDataLastWeighMeasureByUserId(req);
+      return NextResponse.json(data_las_wm);
+    }
     if (provider === "workout") {
       const data_work_out = await getDataWorkOutByUserIdPerMonth(req);
       return NextResponse.json(data_work_out);

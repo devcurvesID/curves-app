@@ -58,7 +58,7 @@ export const getWorkOutUser = (data: any, skip: number, limit: number) =>
     .select("-user_id")
     .skip(skip)
     .limit(limit)
-    .sort({ workout_date: 1 })
+    .sort({ workout_date: -1 })
     .lean();
 
 export const getWorkOutByUserIdAndWorkOutDate = (

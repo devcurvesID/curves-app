@@ -192,3 +192,24 @@ export const getDataWeighMeasureByUserIdPerMonth = async (
     throw error;
   }
 };
+
+export const getDataLastWeighMeasureByUserId = async (
+  req: NextRequest,
+): Promise<any | null> => {
+  try {
+    const decode = await getUserLogin(req);
+    let cek_user = await getUserById(decode._id);
+    if (!cek_user) {
+      throw Error("pengguna tidak ditemukan");
+    }
+    const data_workout = await WeighMeasure.findOne({
+      user_id: decode._id.toString(),
+    }).sort({ wm_date: -1 });
+    const response_data = {
+      response: data_workout,
+    };
+    return response_data;
+  } catch (error) {
+    throw error;
+  }
+};
