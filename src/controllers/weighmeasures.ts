@@ -151,16 +151,12 @@ export const insertNewWorkOutWithUserLoginToMongodb = async (
 
 export const getDataWeighMeasureByUserIdPerMonth = async (
   req: NextRequest,
+  user_id: string,
 ): Promise<any | null> => {
   try {
     const { searchParams } = new URL(req.url);
-    const decode = await getUserLogin(req);
-    let cek_user = await getUserById(decode._id);
-    if (!cek_user) {
-      throw Error("pengguna tidak ditemukan");
-    }
     let body: any = {
-      user_id: decode._id.toString(),
+      user_id: user_id,
     };
     const total = await WeighMeasure.countDocuments(body);
     let year = searchParams.get("year");
@@ -194,16 +190,11 @@ export const getDataWeighMeasureByUserIdPerMonth = async (
 };
 
 export const getDataLastWeighMeasureByUserId = async (
-  req: NextRequest,
+  user_id: string,
 ): Promise<any | null> => {
   try {
-    const decode = await getUserLogin(req);
-    let cek_user = await getUserById(decode._id);
-    if (!cek_user) {
-      throw Error("pengguna tidak ditemukan");
-    }
     const data_workout = await WeighMeasure.findOne({
-      user_id: decode._id.toString(),
+      user_id,
     }).sort({ wm_date: -1 });
     const response_data = {
       response: data_workout,

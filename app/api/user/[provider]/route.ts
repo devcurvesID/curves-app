@@ -4,16 +4,15 @@ import {
   getDataWeighMeasureByUserIdPerMonth,
   insertNewWorkOutWithUserLoginToMongodb,
 } from "@/src/controllers/weighmeasures";
-import { getDataWorkOutByUserIdPerMonth } from "@/src/controllers/workouts";
-import { hashPassword, toUTCISOString } from "@/src/helpers";
+import {
+  getDataLastWorkOutByUserId,
+  getDataWorkOutByUserIdPerMonth,
+} from "@/src/controllers/workouts";
+import { hashPassword } from "@/src/helpers";
 import { getUserLogin } from "@/src/lib/auth";
 import connectDB from "@/src/lib/mongodb";
 import { ClubModel } from "@/src/models/clubs/club_m";
-import {
-  getUserById,
-  getUserByIdAndClubId,
-  updateUserById,
-} from "@/src/models/users/user_m";
+import { getUserById } from "@/src/models/users/user_m";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
@@ -102,9 +101,13 @@ export async function GET(
 ) {
   const { provider } = await context.params;
   if (
-    !["last-weigh-measure", "weigh-measure", "workout", "club"].includes(
-      provider,
-    )
+    ![
+      "last-weigh-measure",
+      "last-workout",
+      "weigh-measure",
+      "workout",
+      "club",
+    ].includes(provider)
   ) {
     return NextResponse.json(
       { error: "provider not support" },
@@ -113,24 +116,33 @@ export async function GET(
   }
   try {
     await connectDB();
+    const decode = await getUserLogin(req);
+    let cek_user = await getUserById(decode._id);
+    if (!cek_user) {
+      throw Error("pengguna tidak ditemukan");
+    }
+    let user_id = decode._id.toString();
     if (provider === "last-weigh-measure") {
-      const data_las_wm = await getDataLastWeighMeasureByUserId(req);
+      const data_las_wm = await getDataLastWeighMeasureByUserId(user_id);
       return NextResponse.json(data_las_wm);
     }
+    if (provider === "last-workout") {
+      const data_las_workout = await getDataLastWorkOutByUserId(user_id);
+      return NextResponse.json(data_las_workout);
+    }
+
     if (provider === "workout") {
-      const data_work_out = await getDataWorkOutByUserIdPerMonth(req);
+      const data_work_out = await getDataWorkOutByUserIdPerMonth(req, user_id);
       return NextResponse.json(data_work_out);
     }
     if (provider === "weigh-measure") {
-      const data_weigh_measure = await getDataWeighMeasureByUserIdPerMonth(req);
+      const data_weigh_measure = await getDataWeighMeasureByUserIdPerMonth(
+        req,
+        user_id,
+      );
       return NextResponse.json(data_weigh_measure);
     }
-    const decode = await getUserLogin(req);
     if (provider === "club") {
-      let cek_user = await getUserById(decode._id);
-      if (!cek_user) {
-        throw Error("pengguna tidak ditemukan");
-      }
       // $in => find muntiple ids with data type is array
       const data_clubs = await ClubModel.find({
         _id: { $in: cek_user.club_id },
@@ -140,7 +152,6 @@ export async function GET(
         response: data_clubs,
       });
     }
-
     //
   } catch (error: any) {
     let error_response = error.message ? error.message : "Server Error";

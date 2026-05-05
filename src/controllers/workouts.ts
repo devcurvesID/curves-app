@@ -8,7 +8,6 @@ import {
   WorkOut,
 } from "../models/workouts/workout_m";
 import { getClubBySourceId } from "../models/clubs/club_m";
-import { getUserLogin } from "../lib/auth";
 
 export const getDataWorkOutByUserId = async (
   req: NextRequest,
@@ -58,16 +57,16 @@ export const getDataWorkOutByUserId = async (
 
 export const getDataWorkOutByUserIdPerMonth = async (
   req: NextRequest,
+  user_id: string,
 ): Promise<any | null> => {
   try {
     const { searchParams } = new URL(req.url);
-    const decode = await getUserLogin(req);
-    let cek_user = await getUserById(decode._id);
+    let cek_user = await getUserById(user_id);
     if (!cek_user) {
       throw Error("pengguna tidak ditemukan");
     }
     let body: any = {
-      user_id: decode._id.toString(),
+      user_id,
       club_id: { $in: cek_user.club_id },
     };
     const total = await WorkOut.countDocuments(body);
@@ -98,6 +97,22 @@ export const getDataWorkOutByUserIdPerMonth = async (
       total,
       response: data_workout,
       ...body,
+    };
+    return response_data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getDataLastWorkOutByUserId = async (
+  user_id: string,
+): Promise<any | null> => {
+  try {
+    const data_workout = await WorkOut.findOne({
+      user_id,
+    }).sort({ workout_date: -1 });
+    const response_data = {
+      response: data_workout,
     };
     return response_data;
   } catch (error) {
