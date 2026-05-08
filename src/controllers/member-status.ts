@@ -1,6 +1,9 @@
 import { NextRequest } from "next/server";
 import { api } from "../lib/axios";
-import { getMemberShipTypeBySourceId } from "../models/membership-types/membership_type_m";
+import {
+  getMemberShipTypeBySourceId,
+  MemberShipTypeModel,
+} from "../models/membership-types/membership_type_m";
 import { toUTCISOString } from "../helpers";
 import { getUserBySourceId } from "../models/users/user_m";
 import {
@@ -49,6 +52,38 @@ export const syncDataMemberStatusFromCMS = async (
     };
     let insert_data = await MemberStatusModel.insertOne(req_body);
     return insert_data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getDataStatusMemberByUserId = async (
+  user_id: string,
+): Promise<any | null> => {
+  try {
+    const data_workout = await MemberStatusModel.findOne({
+      user_id,
+    })
+      .sort({ workout_date: -1 })
+      .lean();
+    if (!data_workout) {
+      let data_res = {
+        response: null,
+      };
+      return data_res;
+    }
+    const data_membership = await MemberShipTypeModel.findById(
+      data_workout.membership_type_id,
+    )
+      .select("membership_type_name membership_type duration")
+      .lean();
+    const response_data = {
+      response: {
+        ...data_workout,
+        membership_type: data_membership,
+      },
+    };
+    return response_data;
   } catch (error) {
     throw error;
   }

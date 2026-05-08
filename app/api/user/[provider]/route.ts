@@ -1,3 +1,4 @@
+import { getDataStatusMemberByUserId } from "@/src/controllers/member-status";
 import { insertNewUserToMongodb } from "@/src/controllers/users";
 import {
   getDataLastWeighMeasureByUserId,
@@ -107,6 +108,7 @@ export async function GET(
       "weigh-measure",
       "workout",
       "club",
+      "member-status",
     ].includes(provider)
   ) {
     return NextResponse.json(
@@ -128,6 +130,11 @@ export async function GET(
     }
     if (provider === "last-workout") {
       const data_las_workout = await getDataLastWorkOutByUserId(user_id);
+      return NextResponse.json(data_las_workout);
+    }
+
+    if (provider === "member-status") {
+      const data_las_workout = await getDataStatusMemberByUserId(user_id);
       return NextResponse.json(data_las_workout);
     }
 
