@@ -1,3 +1,5 @@
+import { syncDataMemberStatusFromCMS } from "@/src/controllers/member-status";
+import { syncDataMemberShipTypesFromCMS } from "@/src/controllers/membership-types";
 import { insertNewUserToMongodb } from "@/src/controllers/users";
 import {
   getDataWeighMeasureByUserId,
@@ -29,6 +31,8 @@ export async function GET(
       "weigh-measure",
       "workout",
       "attendance",
+      "membership-type",
+      "member-status",
     ].includes(provider)
   ) {
     return NextResponse.json(
@@ -40,6 +44,14 @@ export async function GET(
   }
   try {
     await connectDB();
+    if (provider === "membership-type") {
+      let response_data = await syncDataMemberShipTypesFromCMS();
+      return NextResponse.json({ response: response_data }, { status: 200 });
+    }
+    if (provider === "member-status") {
+      let response_data = await syncDataMemberStatusFromCMS(req);
+      return NextResponse.json({ response: response_data }, { status: 200 });
+    }
     if (provider === "attendance") {
       // sync attendance to mobile
     }
