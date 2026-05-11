@@ -37,9 +37,7 @@ export const syncDataMemberStatusFromCMS = async (
     let data_membership = await getMemberShipTypeBySourceId(
       Number(response_memberstatus.membership_type_id),
     );
-    let membership_type_id = data_membership
-      ? response_memberstatus.membership_type_id
-      : null;
+    let membership_type_id = data_membership ? data_membership._id : null;
     let req_body = {
       ...response_memberstatus,
       created_at: toUTCISOString(response_memberstatus.created_at),
