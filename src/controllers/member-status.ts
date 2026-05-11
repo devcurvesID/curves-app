@@ -37,9 +37,9 @@ export const syncDataMemberStatusFromCMS = async (
     let data_membership = await getMemberShipTypeBySourceId(
       Number(response_memberstatus.membership_type_id),
     );
-    if (!data_membership) {
-      throw new Error("data membership tidak ditemukan");
-    }
+    let membership_type_id = data_membership
+      ? response_memberstatus.membership_type_id
+      : null;
     let req_body = {
       ...response_memberstatus,
       created_at: toUTCISOString(response_memberstatus.created_at),
@@ -48,7 +48,7 @@ export const syncDataMemberStatusFromCMS = async (
       thru_date: toUTCISOString(response_memberstatus.thru_date),
       last_wm: toUTCISOString(response_memberstatus.last_wm),
       user_id: data_user._id,
-      membership_type_id: data_membership._id,
+      membership_type_id: membership_type_id, // read status member is active
     };
     let insert_data = await MemberStatusModel.insertOne(req_body);
     return insert_data;
