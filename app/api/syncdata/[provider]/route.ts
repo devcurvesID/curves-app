@@ -1,5 +1,9 @@
+import { syncDataBankByClubIdFromCMS } from "@/src/controllers/banks";
+import { syncDataClubFromCMS } from "@/src/controllers/clubs";
+import { syncDataMemberPaymentByUserIdFromCMS } from "@/src/controllers/member-payments";
 import { syncDataMemberStatusFromCMS } from "@/src/controllers/member-status";
 import { syncDataMemberShipTypesFromCMS } from "@/src/controllers/membership-types";
+import { syncDataPaymentMethodFromCMS } from "@/src/controllers/payments";
 import { insertNewUserToMongodb } from "@/src/controllers/users";
 import {
   getDataWeighMeasureByUserId,
@@ -9,7 +13,6 @@ import { getDataWorkOutByUserId } from "@/src/controllers/workouts";
 import { formatToISO, toUTCISOString } from "@/src/helpers";
 import { api } from "@/src/lib/axios";
 import connectDB from "@/src/lib/mongodb";
-import { ClubModel, getClubBySourceId } from "@/src/models/clubs/club_m";
 import { getRoleBySourceId, RoleModel } from "@/src/models/roles/role_m";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -33,6 +36,9 @@ export async function GET(
       "attendance",
       "membership-type",
       "member-status",
+      "member-payment",
+      "bank-club",
+      "payment-method",
     ].includes(provider)
   ) {
     return NextResponse.json(
@@ -52,6 +58,18 @@ export async function GET(
       let response_data = await syncDataMemberStatusFromCMS(req);
       return NextResponse.json({ response: response_data }, { status: 200 });
     }
+    if (provider === "member-payment") {
+      let response_data = await syncDataMemberPaymentByUserIdFromCMS(req);
+      return NextResponse.json({ response: response_data }, { status: 200 });
+    }
+    if (provider === "bank-club") {
+      let response_data = await syncDataBankByClubIdFromCMS(req);
+      return NextResponse.json({ response: response_data }, { status: 200 });
+    }
+    if (provider === "payment-method") {
+      let response_data = await syncDataPaymentMethodFromCMS();
+      return NextResponse.json({ response: response_data }, { status: 200 });
+    }
     if (provider === "attendance") {
       // sync attendance to mobile
     }
@@ -64,29 +82,8 @@ export async function GET(
       return NextResponse.json({ response: response_data }, { status: 200 });
     }
     if (provider === "club") {
-      const {
-        data: { response },
-      } = await api.get("/club");
-      let response_club = response;
-      let data_club = [];
-      for (let i = 0; i < response_club.length; i++) {
-        let curr_data = await getClubBySourceId(response_club[i].id);
-        if (!curr_data) {
-          let created_at = toUTCISOString(response_club[i].created_at);
-          let updated_at = toUTCISOString(response_club[i].updated_at);
-          data_club.push({
-            source_id: response_club[i].id,
-            ...response_club[i],
-            created_at: created_at,
-            updated_at: updated_at,
-          });
-        }
-      }
-      if (data_club.length === 0) {
-        return NextResponse.json({ response: response_club }, { status: 200 });
-      }
-      await ClubModel.insertMany(data_club);
-      return NextResponse.json({ response: response }, { status: 200 });
+      let response_data = await syncDataClubFromCMS();
+      return NextResponse.json({ response: response_data }, { status: 200 });
     }
     if (provider === "role") {
       const {
