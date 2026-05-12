@@ -41,7 +41,7 @@ const MemberPaymentSchema: Schema = new Schema<IMemberPayment>(
     payment_method_id: {
       type: Schema.Types.ObjectId,
       ref: "payment_method_m",
-      required: true,
+      default: null,
     },
     bank_id: {
       type: Schema.Types.ObjectId,
@@ -120,8 +120,37 @@ const MemberPaymentSchema: Schema = new Schema<IMemberPayment>(
     },
     collection: MODEL_NAME, // 🔥 fix model name
     strict: true, // agar tidak meng-insert nilai selain yang disetup di collection
+
+    toJSON: {
+      virtuals: true,
+    },
+
+    toObject: {
+      virtuals: true,
+    },
   },
 );
+
+MemberPaymentSchema.virtual("payment_method", {
+  ref: "payment_method_m",
+  localField: "payment_method_id",
+  foreignField: "_id",
+  justOne: true,
+});
+
+MemberPaymentSchema.virtual("bank", {
+  ref: "bank_m",
+  localField: "bank_id",
+  foreignField: "_id",
+  justOne: true,
+});
+
+MemberPaymentSchema.virtual("user", {
+  ref: "user_m",
+  localField: "user_id",
+  foreignField: "_id",
+  justOne: true,
+});
 
 export const MemberPaymentModel: Model<IMemberPayment> =
   mongoose.models[MODEL_NAME] ||
@@ -131,3 +160,15 @@ export const getMemberPaymentBySourceId = (source_id: number) =>
 
 export const getMemberPaymentById = (_id: string) =>
   MemberPaymentModel.findOne({ _id });
+
+export const getMemberPaymentByUserMember = (user_id: string) =>
+  MemberPaymentModel.find({ user_id })
+    .select("-user_id -id")
+    .populate("payment_method")
+    .populate("bank");
+
+export const getMemberPaymentByUserId = (user_id: string) =>
+  MemberPaymentModel.find({ user_id })
+    .populate("payment_method")
+    .populate("bank")
+    .populate("user");

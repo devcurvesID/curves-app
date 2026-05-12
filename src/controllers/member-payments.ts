@@ -3,10 +3,12 @@ import { api } from "../lib/axios";
 import { toUTCISOString } from "../helpers";
 import {
   getMemberPaymentBySourceId,
+  getMemberPaymentByUserMember,
   MemberPaymentModel,
 } from "../models/member-payments/member_payment_t";
 import { getUserBySourceId } from "../models/users/user_m";
-
+import { BankModel, getBankBySourceId } from "../models/banks/bank_m";
+import { getPaymentMethodBySourceId } from "../models/payments/payment_method_m";
 export const syncDataMemberPaymentByUserIdFromCMS = async (
   req: NextRequest,
 ): Promise<any | null> => {
@@ -24,26 +26,51 @@ export const syncDataMemberPaymentByUserIdFromCMS = async (
     if (response_memberpayment.length === 0) {
       return [];
     }
-    let data_mongo = [];
     for (let i = 0; i < response_memberpayment.length; i++) {
-      let cek_sourceid = await getMemberPaymentBySourceId(
-        response_memberpayment[i].id,
-      );
+      let m_payment = response_memberpayment[i];
+      let cek_sourceid = await getMemberPaymentBySourceId(m_payment.id);
       if (!cek_sourceid) {
-        data_mongo.push({
-          ...response_memberpayment[i],
-          source_id: response_memberpayment[i].id,
-          created_at: toUTCISOString(response_memberpayment[i].created_at),
-          updated_at: toUTCISOString(response_memberpayment[i].updated_at),
+        let cek_data_bank = await getBankBySourceId(m_payment.bank_id);
+        if (!cek_data_bank) {
+          const { data } = await api.get(`/bank-club?id=${m_payment.bank_id}`);
+          let data_bank_cms = data.response;
+          if (!data_bank_cms) {
+            throw new Error("data bank tidak ditemukan");
+          }
+          let new_data = await BankModel.insertOne({
+            ...data_bank_cms,
+            source_id: data_bank_cms.id,
+            created_at: toUTCISOString(data_bank_cms.created_at),
+            updated_at: toUTCISOString(data_bank_cms.updated_at),
+          });
+          cek_data_bank = new_data;
+        }
+        let cek_data_payment = await getPaymentMethodBySourceId(
+          m_payment.payment_method_id,
+        );
+        await MemberPaymentModel.insertOne({
+          ...m_payment,
+          source_id: m_payment.id,
+          created_at: toUTCISOString(m_payment.created_at),
+          updated_at: toUTCISOString(m_payment.updated_at),
           user_id: data_user._id,
+          bank_id: cek_data_bank._id,
+          payment_method_id: cek_data_payment ? cek_data_payment._id : null,
         });
       }
     }
-    if (data_mongo.length === 0) {
-      return [];
-    }
-    let inser_data = await MemberPaymentModel.insertMany(data_mongo);
-    return inser_data;
+    return response_memberpayment;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getDataMemberPaymentByUserId = async (
+  user_id: string,
+): Promise<any | null> => {
+  try {
+    const data_payment = await getMemberPaymentByUserMember(user_id);
+    return data_payment;
   } catch (error) {
     throw error;
   }

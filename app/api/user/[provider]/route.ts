@@ -1,3 +1,4 @@
+import { getDataMemberPaymentByUserId } from "@/src/controllers/member-payments";
 import { getDataStatusMemberByUserId } from "@/src/controllers/member-status";
 import { insertNewUserToMongodb } from "@/src/controllers/users";
 import {
@@ -109,6 +110,7 @@ export async function GET(
       "workout",
       "club",
       "member-status",
+      "member-payment",
     ].includes(provider)
   ) {
     return NextResponse.json(
@@ -135,6 +137,11 @@ export async function GET(
 
     if (provider === "member-status") {
       const data_las_workout = await getDataStatusMemberByUserId(user_id);
+      return NextResponse.json(data_las_workout);
+    }
+
+    if (provider === "member-payment") {
+      const data_las_workout = await getDataMemberPaymentByUserId(user_id);
       return NextResponse.json(data_las_workout);
     }
 
