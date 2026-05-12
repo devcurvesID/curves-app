@@ -70,7 +70,10 @@ export const getDataMemberPaymentByUserId = async (
 ): Promise<any | null> => {
   try {
     const data_payment = await getMemberPaymentByUserMember(user_id);
-    return data_payment;
+    const response_data = {
+      response: data_payment,
+    };
+    return response_data;
   } catch (error) {
     throw error;
   }
