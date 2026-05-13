@@ -1,19 +1,8 @@
-import { formatToISO, toUTCISOString } from "@/src/helpers";
-import { getCurrentUser, getUserLogin } from "@/src/lib/auth";
+import { getUserLogin } from "@/src/lib/auth";
 import { api } from "@/src/lib/axios";
 import connectDB from "@/src/lib/mongodb";
-import {
-  getUserById,
-  getUserBySourceId,
-  insertNewUser,
-  updateUserById,
-  UserModel,
-} from "@/src/models/users/user_m";
-import {
-  getUserPersonalByPhone,
-  insertUserPersonalByUserId,
-} from "@/src/models/users/user_personal";
-import dayjs from "dayjs";
+import { getUserById, updateUserById } from "@/src/models/users/user_m";
+import { getUserPersonalByPhone } from "@/src/models/users/user_personal";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {

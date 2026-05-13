@@ -1,15 +1,4 @@
-import { formatToISO, toUTCISOString } from "@/src/helpers";
-import { api } from "@/src/lib/axios";
 import connectDB from "@/src/lib/mongodb";
-import { ClubModel, getClubBySourceId } from "@/src/models/clubs/club_m";
-import { getRoleBySourceId, RoleModel } from "@/src/models/roles/role_m";
-import {
-  getUserBySourceId,
-  insertNewUser,
-  UserModel,
-} from "@/src/models/users/user_m";
-import { insertUserPersonalByUserId } from "@/src/models/users/user_personal";
-import dayjs from "dayjs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(

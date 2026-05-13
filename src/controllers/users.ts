@@ -32,6 +32,8 @@ export const insertNewUserToMongodb = async (
     await insertUserPersonalByUserId({
       ...req_body,
       user_id: new_user._id,
+      postal: req_body.postal == "-" ? null : req_body.postal,
+      nik: req_body.nik == "-" ? null : req_body.nik,
     });
     return new_user;
   } catch (error) {
