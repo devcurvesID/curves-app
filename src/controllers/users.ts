@@ -34,6 +34,7 @@ export const insertNewUserToMongodb = async (
       user_id: new_user._id,
       postal: req_body.postal == "-" ? null : req_body.postal,
       nik: req_body.nik == "-" ? null : req_body.nik,
+      key_tag_id: req_body.key_tag_id ? req_body.key_tag_id.toString() : null,
     });
     return new_user;
   } catch (error) {

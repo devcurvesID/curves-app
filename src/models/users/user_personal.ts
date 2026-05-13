@@ -13,7 +13,7 @@ export interface IUserPersonal extends Document {
   cellphone: number;
   nik: number;
   photo: string;
-  key_tag_id: number;
+  key_tag_id: string;
   joined: Date;
   tshirt_size: number;
   flag: string;
@@ -38,7 +38,7 @@ const UserPersonalSchema: Schema = new Schema<IUserPersonal>(
       default: null,
     },
     key_tag_id: {
-      type: Number,
+      type: String,
       default: null,
     },
     tshirt_size: {
