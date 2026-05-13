@@ -37,6 +37,10 @@ const UserPersonalSchema: Schema = new Schema<IUserPersonal>(
       type: Number,
       default: null,
     },
+    key_tag_id: {
+      type: Number,
+      default: null,
+    },
     tshirt_size: {
       type: Number,
       default: null,
