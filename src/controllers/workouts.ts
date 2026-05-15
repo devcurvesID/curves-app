@@ -110,7 +110,9 @@ export const getDataLastWorkOutByUserId = async (
   try {
     const data_workout = await WorkOut.findOne({
       user_id,
-    }).sort({ workout_date: -1 });
+    })
+      .populate("club", "club_name")
+      .sort({ workout_date: -1 });
     const response_data = {
       response: data_workout,
     };

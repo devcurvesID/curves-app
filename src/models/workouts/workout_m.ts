@@ -40,8 +40,29 @@ const WorkOutSchema: Schema = new Schema<IWorkOut>(
     },
     collection: MODEL_NAME, // 🔥 fix model name
     strict: true, // agar tidak meng-insert nilai selain yang disetup di collection
+    toJSON: {
+      virtuals: true,
+    },
+
+    toObject: {
+      virtuals: true,
+    },
   },
 );
+
+WorkOutSchema.virtual("club", {
+  ref: "club_m",
+  localField: "club_id",
+  foreignField: "_id",
+  justOne: true,
+});
+
+WorkOutSchema.virtual("user", {
+  ref: "user_m",
+  localField: "user_id",
+  foreignField: "_id",
+  justOne: true,
+});
 
 export const WorkOut: Model<IWorkOut> =
   mongoose.models[MODEL_NAME] ||
@@ -55,6 +76,7 @@ export const getWorkOutBySourceId = (source_id: number) =>
 
 export const getWorkOutUser = (data: any, skip: number, limit: number) =>
   WorkOut.find(data)
+    .populate("club", "club_name")
     .select("-user_id")
     .skip(skip)
     .limit(limit)
